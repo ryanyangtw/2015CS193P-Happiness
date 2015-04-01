@@ -8,11 +8,21 @@
 
 import UIKit
 
+// Shouldn't implement the method in protocol
+protocol FaceViewDataSource: class {
+  func smilinessForFaceView(sender: FaceView) -> Double? // nil means no smile
+}
+
+@IBDesignable
 class FaceView: UIView {
 
-  
+  @IBInspectable
   var lineWidth: CGFloat = 3 { didSet { setNeedsDisplay() } }
+  
+  @IBInspectable
   var color: UIColor = UIColor.blueColor() { didSet { setNeedsDisplay() } }
+  
+  @IBInspectable
   var scale: CGFloat = 0.90 { didSet {setNeedsDisplay()} }
   
   var faceCenter: CGPoint {
@@ -23,6 +33,10 @@ class FaceView: UIView {
   var faceRadius: CGFloat {
     return (min(bounds.size.width, bounds.size.height) / 2) * scale
   }
+  
+  // weak: avoid memory scycle
+  weak var dataSource: FaceViewDataSource?
+  
   
   // init from code
   override init (frame: CGRect) {
@@ -108,6 +122,15 @@ class FaceView: UIView {
   }
   
   
+  func scale(gesture: UIPinchGestureRecognizer) {
+    println("gesture.state: \(gesture.state)")
+    if gesture.state == .Changed {
+      scale *= gesture.scale
+      gesture.scale = 1
+    }
+  }
+  
+  
   override func drawRect(rect: CGRect) {
     
     // be careful of the wierd error message
@@ -122,7 +145,7 @@ class FaceView: UIView {
     bezierPathForEye(.Left).stroke()
     bezierPathForEye(.Right).stroke()
     
-    let smiliness = 0.9
+    let smiliness = dataSource?.smilinessForFaceView(self) ?? 0.0
     let smilePath = bezierPathForSmile(smiliness)
     smilePath.stroke()
     
@@ -146,6 +169,7 @@ class FaceView: UIView {
     //println("fuck yoou context: \(context)")
     
   }
+  
 
 
 }
